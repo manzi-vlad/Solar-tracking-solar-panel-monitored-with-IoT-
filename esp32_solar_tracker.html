@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+
+    <pre>
+<font color="#5e6d03">#include</font> <font color="#434f54">&lt;</font><b><font color="#d35400">WiFi</font></b><font color="#434f54">.</font><font color="#000000">h</font><font color="#434f54">&gt;</font>
+<font color="#5e6d03">#include</font> <font color="#434f54">&lt;</font><font color="#d35400">WiFiClient</font><font color="#434f54">.</font><font color="#000000">h</font><font color="#434f54">&gt;</font>
+<font color="#5e6d03">#include</font> <font color="#434f54">&lt;</font><font color="#000000">ESP32Servo</font><font color="#434f54">.</font><font color="#000000">h</font><font color="#434f54">&gt;</font>
+<font color="#5e6d03">#include</font> <font color="#005c5f">&#34;Adafruit_MQTT.h&#34;</font>
+<font color="#5e6d03">#include</font> <font color="#005c5f">&#34;Adafruit_MQTT_Client.h&#34;</font>
+
+
+<font color="#434f54">&#47;&#47;Power codes declaration</font>
+<font color="#00979c">const</font> <font color="#00979c">int</font> <font color="#000000">voltagePin</font> <font color="#434f54">=</font> <font color="#000000">33</font><font color="#000000">;</font> 
+<font color="#00979c">const</font> <font color="#00979c">int</font> <font color="#000000">analogInPin</font> <font color="#434f54">=</font> <font color="#000000">35</font><font color="#000000">;</font> 
+<font color="#00979c">int</font> <font color="#000000">sensorValue</font><font color="#000000">;</font> 
+<font color="#00979c">float</font> <font color="#000000">voltage</font><font color="#000000">;</font>
+<font color="#00979c">float</font> <font color="#000000">bat_percentage</font><font color="#000000">;</font>
+<font color="#00979c">const</font> <font color="#00979c">int</font> <font color="#000000">CurrentPin</font><font color="#434f54">=</font><font color="#000000">27</font><font color="#000000">;</font>
+
+
+<b><font color="#d35400">Servo</font></b> <font color="#000000">myservo</font><font color="#000000">;</font>
+ <font color="#00979c">int</font> <font color="#000000">LDR1</font> <font color="#434f54">=</font> <font color="#000000">32</font><font color="#000000">;</font>
+ <font color="#00979c">int</font> <font color="#000000">LDR2</font> <font color="#434f54">=</font> <font color="#000000">34</font><font color="#000000">;</font> 
+
+<font color="#00979c">int</font> <font color="#000000">Spoint</font> <font color="#434f54">=</font> <font color="#000000">90</font><font color="#000000">;</font>
+
+
+<font color="#5e6d03">#define</font> <font color="#000000">WLAN_SSID</font> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#005c5f">&#34;mufasa1&#34;</font> &nbsp;&nbsp;
+<font color="#5e6d03">#define</font> <font color="#000000">WLAN_PASS</font> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#005c5f">&#34;vlad1111&#34;</font> &nbsp;&nbsp;
+
+
+<font color="#5e6d03">#define</font> <font color="#000000">AIO_SERVER</font> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#005c5f">&#34;io.adafruit.com&#34;</font>
+<font color="#5e6d03">#define</font> <font color="#000000">AIO_SERVERPORT</font> &nbsp;<font color="#000000">1883</font> 
+<font color="#5e6d03">#define</font> <font color="#000000">IO_USERNAME</font> &nbsp;<font color="#005c5f">&#34;Manzi_Vlad&#34;</font>
+<font color="#5e6d03">#define</font> <font color="#000000">IO_KEY</font> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#005c5f">&#34;aio_vLpo75KzROD8qgGGvn2Y65oAQZnk&#34;</font> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+
+
+<font color="#d35400">WiFiClient</font> <font color="#d35400">client</font><font color="#000000">;</font>
+<b><font color="#d35400">Adafruit_MQTT_Client</font></b> <font color="#000000">mqtt</font><font color="#000000">(</font><font color="#434f54">&amp;</font><font color="#d35400">client</font><font color="#434f54">,</font> <font color="#000000">AIO_SERVER</font><font color="#434f54">,</font> <font color="#000000">AIO_SERVERPORT</font><font color="#434f54">,</font> <font color="#000000">IO_USERNAME</font><font color="#434f54">,</font> <font color="#000000">IO_KEY</font><font color="#000000">)</font><font color="#000000">;</font>
+
+
+<b><font color="#d35400">Adafruit_MQTT_Subscribe</font></b> <font color="#000000">Sys_switch</font> <font color="#434f54">=</font> <b><font color="#d35400">Adafruit_MQTT_Subscribe</font></b><font color="#000000">(</font><font color="#434f54">&amp;</font><font color="#000000">mqtt</font><font color="#434f54">,</font> <font color="#000000">IO_USERNAME</font> <font color="#005c5f">&#34;&#47;feeds&#47;LED1&#34;</font><font color="#000000">)</font><font color="#000000">;</font>
+<b><font color="#d35400">Adafruit_MQTT_Publish</font></b> <font color="#000000">LED2</font><font color="#434f54">=</font> <b><font color="#d35400">Adafruit_MQTT_Publish</font></b><font color="#000000">(</font><font color="#434f54">&amp;</font><font color="#000000">mqtt</font><font color="#434f54">,</font> <font color="#000000">IO_USERNAME</font> <font color="#005c5f">&#34;&#47;feeds&#47;LED2&#34;</font><font color="#000000">)</font><font color="#000000">;</font>
+<b><font color="#d35400">Adafruit_MQTT_Publish</font></b> <font color="#000000">LED3</font> <font color="#434f54">=</font> <b><font color="#d35400">Adafruit_MQTT_Publish</font></b><font color="#000000">(</font><font color="#434f54">&amp;</font><font color="#000000">mqtt</font><font color="#434f54">,</font> <font color="#000000">IO_USERNAME</font> <font color="#005c5f">&#34;&#47;feeds&#47;LED3&#34;</font><font color="#000000">)</font><font color="#000000">;</font>
+<b><font color="#d35400">Adafruit_MQTT_Publish</font></b> <font color="#000000">LED4</font> <font color="#434f54">=</font> <b><font color="#d35400">Adafruit_MQTT_Publish</font></b><font color="#000000">(</font><font color="#434f54">&amp;</font><font color="#000000">mqtt</font><font color="#434f54">,</font> <font color="#000000">IO_USERNAME</font> <font color="#005c5f">&#34;&#47;feeds&#47;LED4&#34;</font><font color="#000000">)</font><font color="#000000">;</font>
+<b><font color="#d35400">Adafruit_MQTT_Publish</font></b> <font color="#000000">dim2</font><font color="#434f54">=</font> <b><font color="#d35400">Adafruit_MQTT_Publish</font></b><font color="#000000">(</font><font color="#434f54">&amp;</font><font color="#000000">mqtt</font><font color="#434f54">,</font> <font color="#000000">IO_USERNAME</font> <font color="#005c5f">&#34;&#47;feeds&#47;dim2&#34;</font><font color="#000000">)</font><font color="#000000">;</font>
+
+
+
+<font color="#00979c">void</font> <font color="#000000">MQTT_connect</font><font color="#000000">(</font><font color="#000000">)</font><font color="#000000">;</font>
+
+
+
+<font color="#00979c">void</font> <font color="#5e6d03">setup</font><font color="#000000">(</font><font color="#000000">)</font> <font color="#000000">{</font>
+
+ <font color="#d35400">pinMode</font><font color="#000000">(</font><font color="#000000">voltagePin</font><font color="#434f54">,</font><font color="#00979c">INPUT</font><font color="#000000">)</font><font color="#000000">;</font>
+ <font color="#d35400">pinMode</font><font color="#000000">(</font><font color="#000000">analogInPin</font><font color="#434f54">,</font><font color="#00979c">INPUT</font><font color="#000000">)</font><font color="#000000">;</font>
+ <font color="#d35400">pinMode</font><font color="#000000">(</font><font color="#000000">CurrentPin</font><font color="#434f54">,</font><font color="#00979c">INPUT</font><font color="#000000">)</font><font color="#000000">;</font>
+ <font color="#d35400">pinMode</font><font color="#000000">(</font><font color="#000000">LDR1</font><font color="#434f54">,</font><font color="#00979c">INPUT</font><font color="#000000">)</font><font color="#000000">;</font>
+ <font color="#d35400">pinMode</font><font color="#000000">(</font><font color="#000000">LDR2</font><font color="#434f54">,</font><font color="#00979c">INPUT</font>
+ <font color="#000000">)</font><font color="#000000">;</font>
+ &nbsp;
+ &nbsp;<b><font color="#d35400">Serial</font></b><font color="#434f54">.</font><font color="#d35400">begin</font><font color="#000000">(</font><font color="#000000">115200</font><font color="#000000">)</font><font color="#000000">;</font>
+ &nbsp;<font color="#000000">myservo</font><font color="#434f54">.</font><font color="#d35400">attach</font><font color="#000000">(</font><font color="#000000">14</font><font color="#000000">)</font><font color="#000000">;</font>
+<font color="#000000">myservo</font><font color="#434f54">.</font><font color="#d35400">write</font><font color="#000000">(</font><font color="#000000">Spoint</font><font color="#000000">)</font><font color="#000000">;</font>
+<font color="#d35400">delay</font><font color="#000000">(</font><font color="#000000">1000</font><font color="#000000">)</font><font color="#000000">;</font>
+ &nbsp;
+
+ &nbsp;<b><font color="#d35400">Serial</font></b><font color="#434f54">.</font><font color="#d35400">println</font><font color="#000000">(</font><font color="#000000">F</font><font color="#000000">(</font><font color="#005c5f">&#34;Adafruit MQTT password &#34;</font><font color="#000000">)</font><font color="#000000">)</font><font color="#000000">;</font>
+
+ 
+ &nbsp;<b><font color="#d35400">Serial</font></b><font color="#434f54">.</font><font color="#d35400">print</font><font color="#000000">(</font><font color="#005c5f">&#34;Connecting to &#34;</font><font color="#000000">)</font><font color="#000000">;</font>
+ &nbsp;<b><font color="#d35400">Serial</font></b><font color="#434f54">.</font><font color="#d35400">println</font><font color="#000000">(</font><font color="#000000">WLAN_SSID</font><font color="#000000">)</font><font color="#000000">;</font>
+ &nbsp;<b><font color="#d35400">WiFi</font></b><font color="#434f54">.</font><font color="#d35400">begin</font><font color="#000000">(</font><font color="#000000">WLAN_SSID</font><font color="#434f54">,</font> <font color="#000000">WLAN_PASS</font><font color="#000000">)</font><font color="#000000">;</font>
+ &nbsp;<font color="#5e6d03">while</font> <font color="#000000">(</font><b><font color="#d35400">WiFi</font></b><font color="#434f54">.</font><font color="#d35400">status</font><font color="#000000">(</font><font color="#000000">)</font> <font color="#434f54">!=</font> <font color="#000000">WL_CONNECTED</font><font color="#000000">)</font> <font color="#000000">{</font>
+ &nbsp;&nbsp;&nbsp;<font color="#d35400">delay</font><font color="#000000">(</font><font color="#000000">500</font><font color="#000000">)</font><font color="#000000">;</font>
+ &nbsp;&nbsp;&nbsp;<b><font color="#d35400">Serial</font></b><font color="#434f54">.</font><font color="#d35400">print</font><font color="#000000">(</font><font color="#005c5f">&#34;.&#34;</font><font color="#000000">)</font><font color="#000000">;</font>
+ &nbsp;<font color="#000000">}</font>
+ &nbsp;<b><font color="#d35400">Serial</font></b><font color="#434f54">.</font><font color="#d35400">println</font><font color="#000000">(</font><font color="#005c5f">&#34;\nWiFi connected&#34;</font><font color="#000000">)</font><font color="#000000">;</font>
+ &nbsp;<b><font color="#d35400">Serial</font></b><font color="#434f54">.</font><font color="#d35400">print</font><font color="#000000">(</font><font color="#005c5f">&#34;IP address: &#34;</font><font color="#000000">)</font><font color="#000000">;</font>
+ &nbsp;<b><font color="#d35400">Serial</font></b><font color="#434f54">.</font><font color="#d35400">println</font><font color="#000000">(</font><b><font color="#d35400">WiFi</font></b><font color="#434f54">.</font><font color="#d35400">localIP</font><font color="#000000">(</font><font color="#000000">)</font><font color="#000000">)</font><font color="#000000">;</font>
+<font color="#000000">}</font>
+
+<font color="#00979c">void</font> <font color="#5e6d03">loop</font><font color="#000000">(</font><font color="#000000">)</font> <font color="#000000">{</font>
+ &nbsp;<font color="#000000">MQTT_connect</font><font color="#000000">(</font><font color="#000000">)</font><font color="#000000">;</font>
+
+ 
+ &nbsp;
+ &nbsp;&nbsp;<font color="#00979c">int</font> <font color="#000000">ldr1</font> <font color="#434f54">=</font> <font color="#d35400">analogRead</font><font color="#000000">(</font><font color="#000000">LDR1</font><font color="#000000">)</font><font color="#000000">;</font>
+ &nbsp;<font color="#00979c">int</font> <font color="#000000">ldr2</font> <font color="#434f54">=</font> <font color="#d35400">analogRead</font><font color="#000000">(</font><font color="#000000">LDR2</font><font color="#000000">)</font><font color="#000000">;</font>
+ &nbsp;<font color="#000000">ldr2</font><font color="#434f54">=</font><font color="#000000">ldr2</font><font color="#434f54">+</font><font color="#000000">550</font><font color="#000000">;</font>
+ &nbsp;<font color="#00979c">int</font> <font color="#000000">Value1</font> <font color="#434f54">=</font> <font color="#d35400">abs</font><font color="#000000">(</font><font color="#000000">ldr1</font><font color="#434f54">-</font><font color="#000000">ldr2</font><font color="#000000">)</font><font color="#000000">;</font>
+ &nbsp;<font color="#00979c">int</font> <font color="#000000">Value2</font> <font color="#434f54">=</font> <font color="#d35400">abs</font><font color="#000000">(</font><font color="#000000">ldr2</font><font color="#434f54">-</font><font color="#000000">ldr1</font><font color="#000000">)</font><font color="#000000">;</font>
+
+
+
+ &nbsp;<font color="#5e6d03">if</font><font color="#000000">(</font><font color="#000000">(</font><font color="#000000">Value1</font><font color="#434f54">&lt;</font><font color="#000000">1</font><font color="#000000">)</font><font color="#434f54">||</font><font color="#000000">(</font><font color="#000000">Value2</font><font color="#434f54">&lt;</font><font color="#000000">1</font><font color="#000000">)</font><font color="#000000">)</font><font color="#000000">{</font>
+ &nbsp;&nbsp;&nbsp;
+ &nbsp;<font color="#000000">}</font>
+
+ &nbsp;<font color="#5e6d03">else</font><font color="#000000">{</font>
+ &nbsp;&nbsp;&nbsp;<font color="#5e6d03">if</font> <font color="#000000">(</font><font color="#000000">ldr1</font><font color="#434f54">&gt;</font><font color="#000000">ldr2</font><font color="#000000">)</font><font color="#000000">{</font>
+ &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#000000">Spoint</font><font color="#434f54">=</font><font color="#434f54">--</font><font color="#000000">Spoint</font><font color="#000000">;</font>
+ &nbsp;&nbsp;&nbsp;<font color="#000000">}</font>
+
+ &nbsp;&nbsp;&nbsp;<font color="#5e6d03">if</font> <font color="#000000">(</font><font color="#000000">ldr1</font><font color="#434f54">&lt;</font><font color="#000000">ldr2</font><font color="#000000">)</font><font color="#000000">{</font>
+ &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#000000">Spoint</font><font color="#434f54">=</font><font color="#434f54">++</font><font color="#000000">Spoint</font><font color="#000000">;</font>
+ &nbsp;&nbsp;&nbsp;<font color="#000000">}</font>
+ &nbsp;&nbsp;&nbsp;
+ &nbsp;&nbsp;&nbsp;<font color="#000000">Spoint</font> <font color="#434f54">=</font> <font color="#d35400">constrain</font><font color="#000000">(</font><font color="#000000">Spoint</font><font color="#434f54">,</font> <font color="#000000">0</font><font color="#434f54">,</font> <font color="#000000">180</font><font color="#000000">)</font><font color="#000000">;</font>
+
+
+ &nbsp;&nbsp;&nbsp;<font color="#000000">}</font>
+ &nbsp;&nbsp;&nbsp;&nbsp;<font color="#000000">myservo</font><font color="#434f54">.</font><font color="#d35400">write</font><font color="#000000">(</font><font color="#000000">Spoint</font><font color="#000000">)</font><font color="#000000">;</font>
+ &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#d35400">delay</font><font color="#000000">(</font><font color="#000000">300</font><font color="#000000">)</font><font color="#000000">;</font>
+ &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b><font color="#d35400">Serial</font></b><font color="#434f54">.</font><font color="#d35400">println</font><font color="#000000">(</font><font color="#000000">ldr1</font><font color="#000000">)</font><font color="#000000">;</font>
+ &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b><font color="#d35400">Serial</font></b><font color="#434f54">.</font><font color="#d35400">println</font><font color="#000000">(</font><font color="#000000">ldr2</font><font color="#000000">)</font><font color="#000000">;</font>
+ &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b><font color="#d35400">Serial</font></b><font color="#434f54">.</font><font color="#d35400">print</font><font color="#000000">(</font><font color="#005c5f">&#34;Degrees&#34;</font><font color="#000000">)</font><font color="#000000">;</font>
+ &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b><font color="#d35400">Serial</font></b><font color="#434f54">.</font><font color="#d35400">println</font><font color="#000000">(</font><font color="#000000">Spoint</font><font color="#000000">)</font><font color="#000000">;</font> 
+
+ &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#434f54">&#47;&#47;The power codes</font>
+
+ &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<font color="#00979c">unsigned</font> <font color="#00979c">int</font> <font color="#000000">x</font><font color="#434f54">=</font><font color="#000000">0</font><font color="#000000">;</font>
+<font color="#00979c">float</font> <font color="#000000">AcsValue</font><font color="#434f54">=</font><font color="#d35400">analogRead</font><font color="#000000">(</font><font color="#000000">CurrentPin</font><font color="#000000">)</font><font color="#000000">;</font>
+
+<font color="#00979c">float</font> <font color="#000000">RealCurrent</font> <font color="#434f54">=</font> <font color="#d35400">map</font> <font color="#000000">(</font><font color="#000000">AcsValue</font><font color="#434f54">,</font><font color="#000000">1550</font><font color="#434f54">,</font><font color="#000000">3550</font><font color="#434f54">,</font><font color="#434f54">-</font><font color="#000000">20</font><font color="#434f54">,</font><font color="#000000">20</font><font color="#000000">)</font><font color="#000000">;</font> &nbsp;&nbsp;&nbsp;
+ &nbsp;
+ &nbsp;<font color="#d35400">delay</font> <font color="#000000">(</font><font color="#000000">3</font><font color="#000000">)</font><font color="#000000">;</font> 
+
+
+ &nbsp;
+
+<b><font color="#d35400">Serial</font></b><font color="#434f54">.</font><font color="#d35400">print</font><font color="#000000">(</font><font color="#005c5f">&#34;The current is: &#34;</font><font color="#000000">)</font><font color="#000000">;</font> 
+<b><font color="#d35400">Serial</font></b><font color="#434f54">.</font><font color="#d35400">println</font><font color="#000000">(</font><font color="#000000">RealCurrent</font><font color="#000000">)</font><font color="#000000">;</font>
+
+
+ <font color="#00979c">float</font> <font color="#000000">Range</font> <font color="#434f54">=</font> <font color="#d35400">analogRead</font><font color="#000000">(</font><font color="#000000">voltagePin</font><font color="#000000">)</font><font color="#000000">;</font> 
+ <font color="#00979c">float</font> <font color="#000000">Vadc</font> &nbsp;<font color="#434f54">=</font> <font color="#000000">Range</font> <font color="#434f54">*</font> <font color="#000000">3.3</font> <font color="#434f54">&#47;</font> <font color="#000000">4095</font><font color="#000000">;</font> 
+ <font color="#00979c">float</font> <font color="#000000">Vin</font> <font color="#434f54">=</font> <font color="#000000">Vadc</font><font color="#434f54">&#47;</font><font color="#000000">0.33</font> <font color="#000000">;</font>
+ &nbsp;
+ &nbsp;&nbsp;<b><font color="#d35400">Serial</font></b><font color="#434f54">.</font><font color="#d35400">print</font><font color="#000000">(</font><font color="#005c5f">&#34;Solar panel Voltage: &#34;</font><font color="#000000">)</font><font color="#000000">;</font>
+ &nbsp;&nbsp;<b><font color="#d35400">Serial</font></b><font color="#434f54">.</font><font color="#d35400">println</font><font color="#000000">(</font><font color="#000000">Vin</font><font color="#000000">)</font><font color="#000000">;</font> 
+
+ &nbsp;&nbsp;<font color="#00979c">float</font> <font color="#000000">power</font><font color="#434f54">=</font><font color="#000000">Vin</font> <font color="#434f54">*</font> <font color="#000000">RealCurrent</font><font color="#000000">;</font>
+ &nbsp;&nbsp;<b><font color="#d35400">Serial</font></b><font color="#434f54">.</font><font color="#d35400">print</font><font color="#000000">(</font><font color="#005c5f">&#34;Total power: &#34;</font><font color="#000000">)</font><font color="#000000">;</font>
+ &nbsp;&nbsp;<b><font color="#d35400">Serial</font></b><font color="#434f54">.</font><font color="#d35400">print</font><font color="#000000">(</font><font color="#000000">power</font><font color="#000000">)</font><font color="#000000">;</font> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<b><font color="#d35400">Serial</font></b><font color="#434f54">.</font><font color="#d35400">println</font><font color="#000000">(</font><font color="#005c5f">&#34;.&#34;</font><font color="#000000">)</font><font color="#000000">;</font>
+
+<font color="#d35400">delay</font><font color="#000000">(</font><font color="#000000">10</font><font color="#000000">)</font><font color="#000000">;</font>
+
+<font color="#000000">sensorValue</font> <font color="#434f54">=</font> <font color="#d35400">analogRead</font><font color="#000000">(</font><font color="#000000">analogInPin</font><font color="#000000">)</font><font color="#000000">;</font>
+
+<font color="#d35400">delay</font><font color="#000000">(</font><font color="#000000">5</font><font color="#000000">)</font><font color="#000000">;</font>
+ &nbsp;<font color="#000000">voltage</font> <font color="#434f54">=</font> <font color="#000000">(</font><font color="#000000">(</font><font color="#000000">(</font><font color="#000000">sensorValue</font> <font color="#434f54">*</font> <font color="#000000">3.3</font><font color="#000000">)</font> <font color="#434f54">&#47;</font> <font color="#000000">4095</font><font color="#000000">)</font> <font color="#434f54">*</font> <font color="#000000">2</font> <font color="#000000">)</font><font color="#000000">;</font> 
+ &nbsp;<font color="#000000">bat_percentage</font> <font color="#434f54">=</font> <font color="#000000">mapfloat</font><font color="#000000">(</font><font color="#000000">voltage</font><font color="#434f54">,</font> <font color="#000000">3.0</font><font color="#434f54">,</font> <font color="#000000">4.2</font><font color="#434f54">,</font> <font color="#000000">0</font><font color="#434f54">,</font> <font color="#000000">100</font><font color="#000000">)</font><font color="#000000">;</font> 
+
+ &nbsp;&nbsp;&nbsp;
+ 
+ &nbsp;<font color="#5e6d03">if</font> <font color="#000000">(</font><font color="#000000">bat_percentage</font> <font color="#434f54">&gt;=</font> <font color="#000000">100</font><font color="#000000">)</font>
+ &nbsp;<font color="#000000">{</font>
+ &nbsp;&nbsp;&nbsp;<font color="#000000">bat_percentage</font> <font color="#434f54">=</font> <font color="#000000">100</font><font color="#000000">;</font>
+ &nbsp;<font color="#000000">}</font>
+ &nbsp;<font color="#5e6d03">if</font> <font color="#000000">(</font><font color="#000000">bat_percentage</font> <font color="#434f54">&lt;=</font> <font color="#000000">0</font><font color="#000000">)</font>
+ &nbsp;<font color="#000000">{</font>
+ &nbsp;&nbsp;&nbsp;<font color="#000000">bat_percentage</font> <font color="#434f54">=</font> <font color="#000000">1</font><font color="#000000">;</font>
+ &nbsp;<font color="#000000">}</font>
+ 
+ &nbsp;<b><font color="#d35400">Serial</font></b><font color="#434f54">.</font><font color="#d35400">print</font><font color="#000000">(</font><font color="#005c5f">&#34;Analog Value = &#34;</font><font color="#000000">)</font><font color="#000000">;</font>
+ &nbsp;<b><font color="#d35400">Serial</font></b><font color="#434f54">.</font><font color="#d35400">print</font><font color="#000000">(</font><font color="#000000">sensorValue</font><font color="#000000">)</font><font color="#000000">;</font>
+ &nbsp;<b><font color="#d35400">Serial</font></b><font color="#434f54">.</font><font color="#d35400">print</font><font color="#000000">(</font><font color="#005c5f">&#34;\t Output Voltage = &#34;</font><font color="#000000">)</font><font color="#000000">;</font>
+ &nbsp;<b><font color="#d35400">Serial</font></b><font color="#434f54">.</font><font color="#d35400">print</font><font color="#000000">(</font><font color="#000000">voltage</font><font color="#000000">)</font><font color="#000000">;</font>
+ &nbsp;<b><font color="#d35400">Serial</font></b><font color="#434f54">.</font><font color="#d35400">print</font><font color="#000000">(</font><font color="#005c5f">&#34;\t Battery Percentage = &#34;</font><font color="#000000">)</font><font color="#000000">;</font>
+ &nbsp;<b><font color="#d35400">Serial</font></b><font color="#434f54">.</font><font color="#d35400">println</font><font color="#000000">(</font><font color="#000000">bat_percentage</font><font color="#000000">)</font><font color="#000000">;</font>
+
+ &nbsp;<font color="#d35400">delay</font><font color="#000000">(</font><font color="#000000">1000</font><font color="#000000">)</font><font color="#000000">;</font>
+
+
+
+<font color="#00979c">static</font> <font color="#00979c">unsigned</font> <font color="#00979c">long</font> <font color="#000000">lastTime</font> <font color="#434f54">=</font> <font color="#000000">0</font><font color="#000000">;</font>
+<font color="#5e6d03">if</font> <font color="#000000">(</font><font color="#d35400">millis</font><font color="#000000">(</font><font color="#000000">)</font> <font color="#434f54">-</font> <font color="#000000">lastTime</font> <font color="#434f54">&gt;</font> <font color="#000000">7000</font><font color="#000000">)</font> <font color="#000000">{</font> 
+ &nbsp;&nbsp;&nbsp;<font color="#000000">LED2</font><font color="#434f54">.</font><font color="#d35400">publish</font><font color="#000000">(</font><font color="#000000">Vin</font><font color="#000000">)</font><font color="#000000">;</font> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+ &nbsp;&nbsp;&nbsp;<font color="#000000">LED3</font><font color="#434f54">.</font><font color="#d35400">publish</font><font color="#000000">(</font><font color="#000000">RealCurrent</font><font color="#000000">)</font><font color="#000000">;</font>
+ &nbsp;&nbsp;&nbsp;<font color="#000000">LED4</font><font color="#434f54">.</font><font color="#d35400">publish</font><font color="#000000">(</font><font color="#000000">bat_percentage</font><font color="#000000">)</font><font color="#000000">;</font> 
+ &nbsp;&nbsp;&nbsp;<font color="#000000">dim2</font><font color="#434f54">.</font><font color="#d35400">publish</font><font color="#000000">(</font><font color="#000000">power</font><font color="#000000">)</font><font color="#000000">;</font> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+ &nbsp;&nbsp;&nbsp;<font color="#000000">lastTime</font> <font color="#434f54">=</font> <font color="#d35400">millis</font><font color="#000000">(</font><font color="#000000">)</font><font color="#000000">;</font>
+<font color="#000000">}</font>
+
+<font color="#000000">}</font>
+
+
+<font color="#00979c">float</font> <font color="#000000">mapfloat</font><font color="#000000">(</font><font color="#00979c">float</font> <font color="#000000">x</font><font color="#434f54">,</font> <font color="#00979c">float</font> <font color="#000000">in_min</font><font color="#434f54">,</font> <font color="#00979c">float</font> <font color="#000000">in_max</font><font color="#434f54">,</font> <font color="#00979c">float</font> <font color="#000000">out_min</font><font color="#434f54">,</font> <font color="#00979c">float</font> <font color="#000000">out_max</font><font color="#000000">)</font>
+<font color="#000000">{</font>
+ &nbsp;<font color="#5e6d03">return</font> <font color="#000000">(</font><font color="#000000">x</font> <font color="#434f54">-</font> <font color="#000000">in_min</font><font color="#000000">)</font> <font color="#434f54">*</font> <font color="#000000">(</font><font color="#000000">out_max</font> <font color="#434f54">-</font> <font color="#000000">out_min</font><font color="#000000">)</font> <font color="#434f54">&#47;</font> <font color="#000000">(</font><font color="#000000">in_max</font> <font color="#434f54">-</font> <font color="#000000">in_min</font><font color="#000000">)</font> <font color="#434f54">+</font> <font color="#000000">out_min</font><font color="#000000">;</font>
+<font color="#000000">}</font>
+
+<font color="#00979c">void</font> <font color="#000000">MQTT_connect</font><font color="#000000">(</font><font color="#000000">)</font> <font color="#000000">{</font>
+ &nbsp;<font color="#00979c">int8_t</font> <font color="#000000">ret</font><font color="#000000">;</font>
+
+ &nbsp;<font color="#5e6d03">if</font> <font color="#000000">(</font><font color="#000000">mqtt</font><font color="#434f54">.</font><font color="#d35400">connected</font><font color="#000000">(</font><font color="#000000">)</font><font color="#000000">)</font> <font color="#000000">{</font>
+ &nbsp;&nbsp;&nbsp;<font color="#5e6d03">return</font><font color="#000000">;</font>
+ &nbsp;<font color="#000000">}</font>
+
+ &nbsp;<b><font color="#d35400">Serial</font></b><font color="#434f54">.</font><font color="#d35400">print</font><font color="#000000">(</font><font color="#005c5f">&#34;Connecting to MQTT... &#34;</font><font color="#000000">)</font><font color="#000000">;</font>
+ &nbsp;<font color="#00979c">uint8_t</font> <font color="#000000">retries</font> <font color="#434f54">=</font> <font color="#000000">3</font><font color="#000000">;</font>
+
+
+ &nbsp;<font color="#5e6d03">while</font> <font color="#000000">(</font><font color="#000000">(</font><font color="#000000">ret</font> <font color="#434f54">=</font> <font color="#000000">mqtt</font><font color="#434f54">.</font><font color="#d35400">connect</font><font color="#000000">(</font><font color="#000000">)</font><font color="#000000">)</font> <font color="#434f54">!=</font> <font color="#000000">0</font><font color="#000000">)</font> <font color="#000000">{</font> 
+ &nbsp;&nbsp;&nbsp;<b><font color="#d35400">Serial</font></b><font color="#434f54">.</font><font color="#d35400">println</font><font color="#000000">(</font><font color="#000000">mqtt</font><font color="#434f54">.</font><font color="#d35400">connectErrorString</font><font color="#000000">(</font><font color="#000000">ret</font><font color="#000000">)</font><font color="#000000">)</font><font color="#000000">;</font>
+ &nbsp;&nbsp;&nbsp;<b><font color="#d35400">Serial</font></b><font color="#434f54">.</font><font color="#d35400">println</font><font color="#000000">(</font><font color="#005c5f">&#34;Retrying MQTT connection in 5 seconds...&#34;</font><font color="#000000">)</font><font color="#000000">;</font>
+ &nbsp;&nbsp;&nbsp;<font color="#000000">mqtt</font><font color="#434f54">.</font><font color="#d35400">disconnect</font><font color="#000000">(</font><font color="#000000">)</font><font color="#000000">;</font>
+ &nbsp;&nbsp;&nbsp;<font color="#d35400">delay</font><font color="#000000">(</font><font color="#000000">1000</font><font color="#000000">)</font><font color="#000000">;</font>
+ &nbsp;&nbsp;&nbsp;<font color="#000000">retries</font><font color="#434f54">--</font><font color="#000000">;</font>
+ &nbsp;&nbsp;&nbsp;<font color="#5e6d03">if</font> <font color="#000000">(</font><font color="#000000">retries</font> <font color="#434f54">==</font> <font color="#000000">0</font><font color="#000000">)</font> <font color="#000000">{</font>
+ &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#5e6d03">while</font> <font color="#000000">(</font><font color="#000000">1</font><font color="#000000">)</font><font color="#000000">;</font> 
+ &nbsp;&nbsp;&nbsp;<font color="#000000">}</font>
+ &nbsp;<font color="#000000">}</font>
+ &nbsp;<b><font color="#d35400">Serial</font></b><font color="#434f54">.</font><font color="#d35400">println</font><font color="#000000">(</font><font color="#005c5f">&#34;MQTT Connected!&#34;</font><font color="#000000">)</font><font color="#000000">;</font>
+<font color="#000000">}</font>
+
+</pre>
+    
+</body>
+</html>
